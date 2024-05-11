@@ -11,7 +11,7 @@ mvn clean package
 ## run
 
 ```shell
-mvn exec:java -Dexec.mainClass="freder.App" -Dexec.args="<command>"
+mvn exec:java -Dexec.mainClass="freder.feedchecker.App" -Dexec.args="<command>"
 # or
 java -jar target/feed-checker-1.0-SNAPSHOT-jar-with-dependencies.jar <command>
 ```

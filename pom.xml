@@ -41,7 +41,7 @@
           </descriptorRefs>
           <archive>
             <manifest>
-              <mainClass>freder.App</mainClass>
+              <mainClass>freder.feedchecker.App</mainClass>
             </manifest>
           </archive>
         </configuration>

@@ -1,4 +1,4 @@
-package freder;
+package freder.feedchecker;
 
 import java.util.Date;
 
