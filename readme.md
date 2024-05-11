@@ -1,18 +1,14 @@
 Checks a list of RSS / Atom feeds for new posts.
 
 
-## build
-
-```shell
-mvn clean package
-```
-
-
 ## run
 
 ```shell
 mvn exec:java -Dexec.mainClass="freder.feedchecker.App" -Dexec.args="<command>"
+
 # or
+
+mvn clean package
 java -jar target/feed-checker-1.0-SNAPSHOT-jar-with-dependencies.jar <command>
 ```
 

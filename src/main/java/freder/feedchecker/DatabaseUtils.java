@@ -75,7 +75,10 @@ public final class DatabaseUtils {
 		);
 	}
 
-	public static void removeFeed(Connection conn, String url) throws SQLException {
+	public static void removeFeed(
+		Connection conn,
+		String url
+	) throws SQLException {
 		var statement = conn.createStatement();
 		statement.executeUpdate(
 			String.format(
@@ -101,7 +104,9 @@ public final class DatabaseUtils {
 		);
 	}
 
-	public static ArrayList<FeedsTableRow> getFeeds(Connection conn) throws SQLException {
+	public static ArrayList<FeedsTableRow> getFeeds(
+		Connection conn
+	) throws SQLException {
 		var statement = conn.createStatement();
 		var rs = statement.executeQuery(
 			String.format("SELECT * FROM %s", tableName)

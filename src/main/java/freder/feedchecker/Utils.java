@@ -21,7 +21,10 @@ public final class Utils {
 		// prevent instantiation
 	}
 
-	public static String fetchFeedBody(HttpClient client, String url) throws IOException, InterruptedException, URISyntaxException {
+	public static String fetchFeedBody(
+		HttpClient client,
+		String url
+	) throws IOException, InterruptedException, URISyntaxException {
 		var uri = new URI(url);
 		var req = HttpRequest.newBuilder(uri).GET().build();
 		var res = client.send(req, HttpResponse.BodyHandlers.ofString());
@@ -42,9 +45,12 @@ public final class Utils {
 		return date;
 	}
 
-	public static List<SyndEntry> getNewItems(final SyndFeed feed, final Date lastCheckDate) {
-		List<SyndEntry> allItems = feed.getEntries();
-		List<SyndEntry> newItems = allItems.stream()
+	public static List<SyndEntry> getNewItems(
+		final SyndFeed feed,
+		final Date lastCheckDate
+	) {
+		var allItems = feed.getEntries();
+		var newItems = allItems.stream()
 			.map((item) -> {
 				consolidateDates(item);
 				return item;
