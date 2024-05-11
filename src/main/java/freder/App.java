@@ -1,11 +1,9 @@
 package freder;
 
 import java.io.IOException;
-import java.io.StringReader;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
-import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
@@ -20,7 +18,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 
 import com.rometools.rome.feed.synd.SyndEntry;
-import com.rometools.rome.io.SyndFeedInput;
 
 public class App {
 	static final String dbFileName = "db.sqlite";
@@ -145,22 +142,40 @@ public class App {
 	}
 
 	public static void addFeed(String feedUrl) {
+		URI url;
 		try {
-			var url = new URI(feedUrl);
-			var conn = DriverManager.getConnection("jdbc:sqlite:" + dbFileName);
-			DatabaseUtils.addFeed(conn, url);
-			conn.close();
+			url = new URI(feedUrl);
 		} catch (URISyntaxException e) {
 			System.err.println("Not a valid URL");
 			System.exit(1);
+			return;
+		}
+
+		try (var conn = DriverManager.getConnection(
+			DatabaseUtils.connPrfx + dbFileName
+		)) {
+			DatabaseUtils.addFeed(conn, url);
 		} catch (SQLException e) {
-			e.printStackTrace();
+			if (e.toString().contains("SQLITE_CONSTRAINT_UNIQUE")) {
+				System.err.println("Feed exists already");
+			} else {
+				e.printStackTrace();
+			}
 			System.exit(1);
+			return;
 		}
 	}
 
 	public static void removeFeed(String feedUrl) {
-		// TODO: implement
+		try (var conn = DriverManager.getConnection(
+			DatabaseUtils.connPrfx + dbFileName
+		)) {
+			DatabaseUtils.removeFeed(conn, feedUrl);
+		} catch (SQLException e) {
+			e.printStackTrace();
+			System.exit(1);
+			return;
+		}
 	}
 
 	public static void main(String[] args) {

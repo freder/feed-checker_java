@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public final class DatabaseUtils {
+	static final String connPrfx = "jdbc:sqlite:";
 	static final String tableName = "feeds";
 
 	private DatabaseUtils() {
@@ -59,8 +60,18 @@ public final class DatabaseUtils {
 
 		statement.executeUpdate(
 			String.format(
-				"insert into %s (%s) values (%s)",
+				"INSERT INTO %s (%s) VALUES (%s)",
 				tableName, cols, valuesStr
+			)
+		);
+	}
+
+	public static void removeFeed(Connection conn, String url) throws SQLException {
+		var statement = conn.createStatement();
+		statement.executeUpdate(
+			String.format(
+				"DELETE FROM %s WHERE url = '%s'",
+				tableName, url
 			)
 		);
 	}
