@@ -92,6 +92,12 @@ public class App {
 				);
 
 				var newItems = Utils.getNewItems(feed, entry.lastCheck());
+
+				// sort by date
+				newItems.sort((SyndEntry a, SyndEntry b) -> {
+					return b.getUpdatedDate().compareTo(a.getUpdatedDate());
+				});
+
 				results.put(entry.title(), newItems);
 				return null;
 			};
