@@ -1,17 +1,14 @@
 package freder;
 
-import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
+import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
@@ -21,8 +18,6 @@ import com.rometools.rome.feed.synd.SyndEntry;
 
 public class App {
 	static final String dbFileName = "db.sqlite";
-	static final String feedsFilePath = "./feeds.json";
-	static final String lastCheckTimeFilePath = "./last-check.txt";
 	static final int maxConcurrency = 4;
 
 	private static void printUsageAndExit() {
@@ -33,25 +28,42 @@ public class App {
 	}
 
 	private static void listFeeds() {
-		HashMap<String, String> feedMap;
-		try {
-			feedMap = Utils.readFeedUrls(feedsFilePath);
-		} catch (IOException e) {
-			e.printStackTrace();
+		ArrayList<FeedsTableRow> feeds;
+		try (var conn = DriverManager.getConnection(
+			DatabaseUtils.connPrefix + dbFileName
+		)) {
+			feeds = DatabaseUtils.getFeeds(conn);
+		} catch (SQLException e) {
+			System.err.println("Failed to get feeds");
 			System.exit(1);
 			return;
 		}
-		for (String key: feedMap.keySet()) {
-			System.out.println(key + ": " + feedMap.get(key));
+
+		for (var entry: feeds) {
+			System.out.println(
+				entry.title() + ": " + entry.url()
+			);
 		}
 	}
 
 	private static void checkFeeds() {
-		HashMap<String, String> feedMap;
+		ArrayList<FeedsTableRow> feeds;
+		Connection conn;
+
 		try {
-			feedMap = Utils.readFeedUrls(feedsFilePath);
-		} catch (IOException e) {
-			e.printStackTrace();
+			conn = DriverManager.getConnection(
+				DatabaseUtils.connPrefix + dbFileName
+			);
+		} catch (SQLException e) {
+			System.err.println("Failed to connect to database");
+			System.exit(1);
+			return;
+		}
+
+		try {
+			feeds = DatabaseUtils.getFeeds(conn);
+		} catch (SQLException e) {
+			System.err.println("Failed to get feeds");
 			System.exit(1);
 			return;
 		}
@@ -61,41 +73,26 @@ public class App {
 		var results = new ConcurrentHashMap<String, List<SyndEntry>>();
 		HttpClient client = HttpClient.newHttpClient();
 
-		Date _lastCheckTime;
-		try {
-			_lastCheckTime = Utils.getLastCheckTime(lastCheckTimeFilePath);
-		} catch (Exception e) {
-			System.err.println("Failed to read last check date file");
-			_lastCheckTime = new GregorianCalendar(
-				1970, Calendar.JANUARY, 1, 0, 0, 0
-			).getTime();
-		}
-		final Date lastCheckTime = _lastCheckTime;
-
-		try {
-			Date now = new Date();
-			Utils.writeLastCheckTime(lastCheckTimeFilePath, now);
-		} catch (IOException e) {
-			System.err.println("Failed to write last check time file");
-			e.printStackTrace();
-		}
-
-		for (var entry: feedMap.entrySet()) {
-			String name = entry.getKey();
-			String url = entry.getValue();
+		for (var entry: feeds) {
 			Callable<Void> task = () -> {
 				System.out.print("."); // progress indicator
 				String body;
 				try {
-					body = Utils.fetchFeedBody(client, url);
+					body = Utils.fetchFeedBody(client, entry.url());
 				} catch (Exception e) {
 					e.printStackTrace();
 					return null;
 				}
+
 				var feed = Utils.parseFeed(body);
 
-				var newItems = Utils.getNewItems(feed, lastCheckTime);
-				results.put(name, newItems);
+				// update last check time
+				DatabaseUtils.updateFeedLastCheck(
+					conn, entry.url(), new Date()
+				);
+
+				var newItems = Utils.getNewItems(feed, entry.lastCheck());
+				results.put(entry.title(), newItems);
 				return null;
 			};
 			tasks.add(task);
@@ -109,6 +106,12 @@ public class App {
 			return;
 		} finally {
 			exec.shutdown();
+		}
+
+		try {
+			conn.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
 		}
 
 		System.out.println();
@@ -152,7 +155,7 @@ public class App {
 		}
 
 		try (var conn = DriverManager.getConnection(
-			DatabaseUtils.connPrfx + dbFileName
+			DatabaseUtils.connPrefix + dbFileName
 		)) {
 			DatabaseUtils.addFeed(conn, url);
 		} catch (SQLException e) {
@@ -168,7 +171,7 @@ public class App {
 
 	public static void removeFeed(String feedUrl) {
 		try (var conn = DriverManager.getConnection(
-			DatabaseUtils.connPrfx + dbFileName
+			DatabaseUtils.connPrefix + dbFileName
 		)) {
 			DatabaseUtils.removeFeed(conn, feedUrl);
 		} catch (SQLException e) {
