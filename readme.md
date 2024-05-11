@@ -1,3 +1,6 @@
+Checks a list of RSS / Atom feeds for new posts.
+
+
 ## setup
 
 create a `feeds.json` file à la:

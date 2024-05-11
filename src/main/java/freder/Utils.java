@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.StringReader;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
@@ -19,6 +20,8 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.rometools.rome.feed.synd.SyndEntry;
 import com.rometools.rome.feed.synd.SyndFeed;
+import com.rometools.rome.io.FeedException;
+import com.rometools.rome.io.SyndFeedInput;
 
 public final class Utils {
 	static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -67,6 +70,10 @@ public final class Utils {
 		var req = HttpRequest.newBuilder(uri).GET().build();
 		var res = client.send(req, HttpResponse.BodyHandlers.ofString());
 		return res.body();
+	}
+
+	public static SyndFeed parseFeed(String body) throws FeedException {
+		return (new SyndFeedInput()).build(new StringReader(body));
 	}
 
 	public static Date consolidateDates(SyndEntry item) {

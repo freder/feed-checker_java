@@ -2,7 +2,12 @@ package freder;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.http.HttpClient;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -18,6 +23,7 @@ import com.rometools.rome.feed.synd.SyndEntry;
 import com.rometools.rome.io.SyndFeedInput;
 
 public class App {
+	static final String dbFileName = "db.sqlite";
 	static final String feedsFilePath = "./feeds.json";
 	static final String lastCheckTimeFilePath = "./last-check.txt";
 	static final int maxConcurrency = 4;
@@ -89,7 +95,8 @@ public class App {
 					e.printStackTrace();
 					return null;
 				}
-				var feed = (new SyndFeedInput()).build(new StringReader(body));
+				var feed = Utils.parseFeed(body);
+
 				var newItems = Utils.getNewItems(feed, lastCheckTime);
 				results.put(name, newItems);
 				return null;
@@ -137,22 +144,59 @@ public class App {
 		}
 	}
 
+	public static void addFeed(String feedUrl) {
+		try {
+			var url = new URI(feedUrl);
+			var conn = DriverManager.getConnection("jdbc:sqlite:" + dbFileName);
+			DatabaseUtils.addFeed(conn, url);
+			conn.close();
+		} catch (URISyntaxException e) {
+			System.err.println("Not a valid URL");
+			System.exit(1);
+		} catch (SQLException e) {
+			e.printStackTrace();
+			System.exit(1);
+		}
+	}
+
+	public static void removeFeed(String feedUrl) {
+		// TODO: implement
+	}
+
 	public static void main(String[] args) {
-		if (args.length != 1) {
-			printUsageAndExit();
+		// ensure db / table exists
+		try {
+			DatabaseUtils.createTable(dbFileName);
+		} catch (SQLException e) {
+			System.err.println("Failed to create database");
 		}
 
-		switch (args[0]) {
-			case "list":
-				listFeeds();
-				break;
-
-			case "check":
-				checkFeeds();
-				break;
-
-			default:
-				break;
+		if (args.length == 1) {
+			switch (args[0]) {
+				case "list":
+					listFeeds();
+					break;
+				case "check":
+					checkFeeds();
+					break;
+				default:
+					printUsageAndExit();
+					break;
+			}
+		} else if (args.length == 2) {
+			switch (args[0]) {
+				case "add":
+					addFeed(args[1]);
+					break;
+				case "remove":
+					removeFeed(args[1]);
+					break;
+				default:
+					printUsageAndExit();
+					break;
+			}
+		} else {
+			printUsageAndExit();
 		}
 	}
 }
