@@ -19,6 +19,7 @@ import com.rometools.rome.io.SyndFeedInput;
 
 public class App {
 	static final String feedsFilePath = "./feeds.json";
+	static final String lastCheckTimeFilePath = "./last-check.txt";
 	static final int maxConcurrency = 4;
 
 	private static void printUsageAndExit() {
@@ -57,10 +58,24 @@ public class App {
 		var results = new ConcurrentHashMap<String, List<SyndEntry>>();
 		HttpClient client = HttpClient.newHttpClient();
 
-		// TODO: use real date
-		Date lastCheckDate = new GregorianCalendar(
-			2024, Calendar.JANUARY, 1, 0, 0, 0
-		).getTime();
+		Date _lastCheckTime;
+		try {
+			_lastCheckTime = Utils.getLastCheckTime(lastCheckTimeFilePath);
+		} catch (Exception e) {
+			System.err.println("Failed to read last check date file");
+			_lastCheckTime = new GregorianCalendar(
+				1970, Calendar.JANUARY, 1, 0, 0, 0
+			).getTime();
+		}
+		final Date lastCheckTime = _lastCheckTime;
+
+		try {
+			Date now = new Date();
+			Utils.writeLastCheckTime(lastCheckTimeFilePath, now);
+		} catch (IOException e) {
+			System.err.println("Failed to write last check time file");
+			e.printStackTrace();
+		}
 
 		for (var entry: feedMap.entrySet()) {
 			String name = entry.getKey();
@@ -75,7 +90,7 @@ public class App {
 					return null;
 				}
 				var feed = (new SyndFeedInput()).build(new StringReader(body));
-				List<SyndEntry> newItems = Utils.getNewItems(feed, lastCheckDate);
+				var newItems = Utils.getNewItems(feed, lastCheckTime);
 				results.put(name, newItems);
 				return null;
 			};
@@ -89,7 +104,7 @@ public class App {
 			System.exit(1);
 			return;
 		} finally {
-			exec.close();
+			exec.shutdown();
 		}
 
 		System.out.println();
@@ -103,14 +118,14 @@ public class App {
 			return;
 		}
 
-		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+		SimpleDateFormat outputDateFormat = new SimpleDateFormat("yyyy-MM-dd");
 		for (String name: results.keySet()) {
 			var items = results.get(name);
 			if (items.size() > 0) {
 				System.out.println();
 				System.out.println(name + ":");
 				items.forEach((item) -> {
-					String date = dateFormat.format(item.getUpdatedDate());
+					String date = outputDateFormat.format(item.getUpdatedDate());
 					System.out.println(
 						String.format("- [%s] %s", date, item.getTitle())
 					);

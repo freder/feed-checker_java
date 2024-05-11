@@ -1,3 +1,4 @@
 *.class
 target
 feeds.json
+last-check.txt
