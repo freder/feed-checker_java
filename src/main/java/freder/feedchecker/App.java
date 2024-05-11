@@ -22,6 +22,8 @@ public class App {
 
 	private static void printUsageAndExit() {
 		System.err.println("Usage:");
+		System.err.println("<feed-checker> add <feed-url>");
+		System.err.println("<feed-checker> list <feed-url>");
 		System.err.println("<feed-checker> list");
 		System.err.println("<feed-checker> check");
 		System.exit(1);
