@@ -26,8 +26,12 @@ public final class DatabaseUtils {
 		// prevent instantiation
 	}
 
+	public static Connection getConnection(String fileName) throws SQLException {
+		return DriverManager.getConnection(connPrefix + fileName);
+	}
+
 	public static void createTable(String fileName) throws SQLException {
-		try (var conn = DriverManager.getConnection("jdbc:sqlite:" + fileName)) {
+		try (var conn = getConnection(fileName)) {
 			var statement = conn.createStatement();
 			String queryStr = """
 				CREATE TABLE IF NOT EXISTS %s (

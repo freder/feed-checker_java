@@ -4,7 +4,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -31,9 +30,7 @@ public class App {
 
 	private static void listFeeds() {
 		ArrayList<FeedsTableRow> feeds;
-		try (var conn = DriverManager.getConnection(
-			DatabaseUtils.connPrefix + dbFileName
-		)) {
+		try (var conn = DatabaseUtils.getConnection(dbFileName)) {
 			feeds = DatabaseUtils.getFeeds(conn);
 		} catch (SQLException e) {
 			System.err.println("Failed to get feeds");
@@ -53,9 +50,7 @@ public class App {
 		Connection conn;
 
 		try {
-			conn = DriverManager.getConnection(
-				DatabaseUtils.connPrefix + dbFileName
-			);
+			conn = DatabaseUtils.getConnection(dbFileName);
 		} catch (SQLException e) {
 			System.err.println("Failed to connect to database");
 			System.exit(1);
@@ -160,9 +155,7 @@ public class App {
 			return;
 		}
 
-		try (var conn = DriverManager.getConnection(
-			DatabaseUtils.connPrefix + dbFileName
-		)) {
+		try (var conn = DatabaseUtils.getConnection(dbFileName)) {
 			DatabaseUtils.addFeed(conn, url);
 		} catch (SQLException e) {
 			if (e.toString().contains("SQLITE_CONSTRAINT_UNIQUE")) {
@@ -176,9 +169,7 @@ public class App {
 	}
 
 	public static void removeFeed(String feedUrl) {
-		try (var conn = DriverManager.getConnection(
-			DatabaseUtils.connPrefix + dbFileName
-		)) {
+		try (var conn = DatabaseUtils.getConnection(dbFileName)) {
 			DatabaseUtils.removeFeed(conn, feedUrl);
 		} catch (SQLException e) {
 			e.printStackTrace();
