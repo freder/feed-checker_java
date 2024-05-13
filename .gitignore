@@ -1,5 +1,3 @@
 *.class
-target
-feeds.json
-last-check.txt
 db.sqlite
+target
