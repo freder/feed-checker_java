@@ -36,6 +36,7 @@ public final class Utils {
 	}
 
 	public static Date consolidateDates(SyndEntry item) {
+		// rss and atom feeds have different date fields
 		Date datePublished = item.getPublishedDate();
 		Date dateUpdated = item.getUpdatedDate();
 		Date date = (datePublished != null)
